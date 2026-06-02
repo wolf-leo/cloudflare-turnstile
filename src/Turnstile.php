@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types=1);
+declare(strict_types = 1);
 
 namespace Wolfcode\CloudflareTurnstile;
 
@@ -11,27 +11,31 @@ use Wolfcode\CloudflareTurnstile\Exception\ValidationException;
 
 class Turnstile
 {
-    private const SITE_VERIFY_URL = 'https://challenges.cloudflare.com/turnstile/v0/siteverify';
+    private const SITEVERIFY_URL = 'https://challenges.cloudflare.com/turnstile/v0/siteverify';
 
     private Client $client;
 
     public function __construct(
-        private readonly Configuration $config,
-        ?Client $client = null,
-    ) {
+        private readonly string  $secretKey,
+        private readonly ?string $expectedHostname = null,
+        private readonly ?string $action = null,
+        private readonly int     $timeout = 10000,
+        ?Client                  $client = null,
+    )
+    {
         $this->client = $client ?? new Client([
-            'base_uri' => self::SITE_VERIFY_URL,
-            'timeout' => $this->config->getTimeout() / 1000,
+            'base_uri'        => self::SITEVERIFY_URL,
+            'timeout'         => $this->timeout / 1000,
             'connect_timeout' => 5,
-            'headers' => [
+            'headers'         => [
                 'Accept' => 'application/json',
             ],
         ]);
     }
 
-    public function getConfig(): Configuration
+    public function getSecretKey(): string
     {
-        return $this->config;
+        return $this->secretKey;
     }
 
     public function getClient(): Client
@@ -54,7 +58,7 @@ class Turnstile
         }
 
         $data = [
-            'secret' => $this->config->getSecretKey(),
+            'secret'   => $this->secretKey,
             'response' => $token,
         ];
 
@@ -74,20 +78,20 @@ class Turnstile
             );
         }
 
-        if ($this->config->getExpectedHostname() !== null
-            && ($result['hostname'] ?? '') !== $this->config->getExpectedHostname()
+        if ($this->expectedHostname !== null
+            && ($result['hostname'] ?? '') !== $this->expectedHostname
         ) {
             throw new ValidationException(
-                'Hostname mismatch: expected "' . $this->config->getExpectedHostname() . '" but got "' . ($result['hostname'] ?? '') . '"',
+                'Hostname mismatch: expected "' . $this->expectedHostname . '" but got "' . ($result['hostname'] ?? '') . '"',
                 ['hostname_mismatch']
             );
         }
 
-        if ($this->config->getAction() !== null
-            && ($result['action'] ?? '') !== $this->config->getAction()
+        if ($this->action !== null
+            && ($result['action'] ?? '') !== $this->action
         ) {
             throw new ValidationException(
-                'Action mismatch: expected "' . $this->config->getAction() . '" but got "' . ($result['action'] ?? '') . '"',
+                'Action mismatch: expected "' . $this->action . '" but got "' . ($result['action'] ?? '') . '"',
                 ['action_mismatch']
             );
         }
@@ -103,8 +107,8 @@ class Turnstile
         try {
             $this->validate($token, $remoteIp);
             return true;
-        } catch (ValidationException) {
-            return false;
+        }catch (ValidationException $exception) {
+            throw  $exception;
         }
     }
 
@@ -114,9 +118,9 @@ class Turnstile
     public static function getRemoteIp(): ?string
     {
         return $_SERVER['HTTP_CF_CONNECTING_IP']
-            ?? $_SERVER['HTTP_X_FORWARDED_FOR']
-            ?? $_SERVER['REMOTE_ADDR']
-            ?? null;
+               ?? $_SERVER['HTTP_X_FORWARDED_FOR']
+                  ?? $_SERVER['REMOTE_ADDR']
+                     ?? null;
     }
 
     /**
@@ -134,7 +138,7 @@ class Turnstile
                 'form_params' => $data,
             ]);
 
-            $body = $response->getBody()->getContents();
+            $body   = $response->getBody()->getContents();
             $result = json_decode($body, true);
 
             if (!is_array($result)) {
@@ -145,16 +149,16 @@ class Turnstile
             }
 
             return $result;
-        } catch (ValidationException $e) {
+        }catch (ValidationException $e) {
             throw $e;
-        } catch (TransferException $e) {
+        }catch (TransferException $e) {
             throw new ValidationException(
                 'Turnstile request failed: ' . $e->getMessage(),
                 ['http-error'],
                 0,
                 $e
             );
-        } catch (GuzzleException $e) {
+        }catch (GuzzleException $e) {
             throw new ValidationException(
                 'Turnstile request failed: ' . $e->getMessage(),
                 ['guzzle-error'],
@@ -168,9 +172,9 @@ class Turnstile
     {
         if (function_exists('random_bytes')) {
             $data = random_bytes(16);
-        } elseif (function_exists('openssl_random_pseudo_bytes')) {
+        }elseif (function_exists('openssl_random_pseudo_bytes')) {
             $data = openssl_random_pseudo_bytes(16);
-        } else {
+        }else {
             $data = mt_rand() . mt_rand();
         }
 

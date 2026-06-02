@@ -9,8 +9,19 @@ class Widget
     private const SCRIPT_URL = 'https://challenges.cloudflare.com/turnstile/v0/api.js';
 
     public function __construct(
-        private readonly Configuration $config,
+        private readonly string $siteKey,
+        private readonly string $theme = 'auto',
+        private readonly string $size = 'normal',
+        private readonly ?string $language = null,
+        private readonly ?string $appearance = null,
+        private readonly bool $retryEnabled = true,
+        private readonly int $retryInterval = 1500,
     ) {
+    }
+
+    public function getSiteKey(): string
+    {
+        return $this->siteKey;
     }
 
     /**
@@ -20,33 +31,31 @@ class Widget
     {
         $attributes = [
             'class' => 'cf-turnstile',
-            'data-sitekey' => $this->config->getSiteKey(),
-            'data-theme' => $this->config->getTheme(),
-            'data-size' => $this->config->getSize(),
+            'data-sitekey' => $this->siteKey,
+            'data-theme' => $this->theme,
+            'data-size' => $this->size,
         ];
 
         if ($action !== null) {
             $attributes['data-action'] = $action;
-        } elseif ($this->config->getAction() !== null) {
-            $attributes['data-action'] = $this->config->getAction();
         }
 
         if ($data !== null) {
             $attributes['data-cdata'] = $data;
         }
 
-        if ($this->config->getLanguage() !== null) {
-            $attributes['data-language'] = $this->config->getLanguage();
+        if ($this->language !== null) {
+            $attributes['data-language'] = $this->language;
         }
 
-        if ($this->config->getAppearance() !== null) {
-            $attributes['data-appearance'] = $this->config->getAppearance();
+        if ($this->appearance !== null) {
+            $attributes['data-appearance'] = $this->appearance;
         }
 
-        if (!$this->config->isRetryEnabled()) {
+        if (!$this->retryEnabled) {
             $attributes['data-retry'] = 'never';
         } else {
-            $attributes['data-retry-interval'] = (string) $this->config->getRetryInterval();
+            $attributes['data-retry-interval'] = (string) $this->retryInterval;
         }
 
         $attributeString = $this->buildAttributeString($attributes);
@@ -81,8 +90,8 @@ class Widget
     {
         $params = [];
 
-        if ($this->config->getLanguage() !== null) {
-            $params['lang'] = $this->config->getLanguage();
+        if ($this->language !== null) {
+            $params['lang'] = $this->language;
         }
 
         $url = self::SCRIPT_URL;
