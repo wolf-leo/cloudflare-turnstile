@@ -1,0 +1,20 @@
+{
+  "name": "wolfcode/cloudflare-turnstile",
+  "type": "library",
+  "require": {
+    "php": ">8.0",
+    "guzzlehttp/guzzle": "^7.10.0"
+  },
+  "license": "MIT",
+  "autoload": {
+    "psr-4": {
+      "Wolfcode\\CloudflareTurnstile\\": "src/"
+    }
+  },
+  "authors": [
+    {
+      "name": "wolfcode"
+    }
+  ],
+  "minimum-stability": "dev"
+}
