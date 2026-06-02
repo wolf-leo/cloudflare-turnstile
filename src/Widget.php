@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types=1);
+declare(strict_types = 1);
 
 namespace Wolfcode\CloudflareTurnstile;
 
@@ -9,15 +9,15 @@ class Widget
     private const SCRIPT_URL = 'https://challenges.cloudflare.com/turnstile/v0/api.js';
 
     public function __construct(
-        private readonly string $siteKey,
-        private readonly string $theme = 'auto',
-        private readonly string $size = 'normal',
+        private readonly string  $siteKey,
+        private readonly string  $theme = 'auto',
+        private readonly string  $size = 'normal',
         private readonly ?string $language = null,
         private readonly ?string $appearance = null,
-        private readonly bool $retryEnabled = true,
-        private readonly int $retryInterval = 1500,
-    ) {
-    }
+        private readonly bool    $retryEnabled = true,
+        private readonly int     $retryInterval = 1500,
+        private readonly ?string $callback = null,
+    ) {}
 
     public function getSiteKey(): string
     {
@@ -30,10 +30,10 @@ class Widget
     public function render(?string $action = null, ?string $data = null): string
     {
         $attributes = [
-            'class' => 'cf-turnstile',
+            'class'        => 'cf-turnstile',
             'data-sitekey' => $this->siteKey,
-            'data-theme' => $this->theme,
-            'data-size' => $this->size,
+            'data-theme'   => $this->theme,
+            'data-size'    => $this->size,
         ];
 
         if ($action !== null) {
@@ -54,8 +54,12 @@ class Widget
 
         if (!$this->retryEnabled) {
             $attributes['data-retry'] = 'never';
-        } else {
-            $attributes['data-retry-interval'] = (string) $this->retryInterval;
+        }else {
+            $attributes['data-retry-interval'] = (string)$this->retryInterval;
+        }
+
+        if ($this->callback !== null) {
+            $attributes['data-callback'] = $this->callback;
         }
 
         $attributeString = $this->buildAttributeString($attributes);
